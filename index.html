@@ -450,6 +450,21 @@
     toast(key ? "儲存好了，按住麥克風試試看" : "已儲存");
   });
 
+  // ---------------------------------------------------------------- 手機被當成電腦版時自動放大
+  // Chrome 開了「電腦版網站」（或加到主畫面時沿用）會用 980px 寬排版，整頁縮得很小。
+  // 偵測到「觸控螢幕＋畫面比螢幕寬很多」就把整頁放大回手機寬度。
+  function fitPhone() {
+    const html = document.documentElement;
+    html.style.zoom = "";
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    const sw = Math.min(screen.width, screen.height) || 0;
+    const vw = window.innerWidth;
+    if (touch && sw && vw > sw * 1.3) html.style.zoom = (vw / sw).toFixed(3);
+  }
+  fitPhone();
+  window.addEventListener("resize", fitPhone);
+  window.__fitPhone = fitPhone;
+
   // ---------------------------------------------------------------- 啟動
   if (!window.MediaRecorder || !navigator.mediaDevices) {
     status("這個瀏覽器不支援錄音");
