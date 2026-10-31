@@ -169,6 +169,7 @@
     <div class="row"><button class="btn ghost" id="resetDict">恢復預設詞庫</button></div>
 
     <div class="switch"><input type="checkbox" id="autoCopy"><span>整理好自動複製</span></div>
+    <div class="switch"><input type="checkbox" id="plainPron"><span>「祢、祂」改成「你、他」</span></div>
 
     <div class="note">
       <p>🔒 隱私：講的聲音會送到 Groq 辨識和整理。代禱、輔導這類隱私內容，建議用電腦版的「只用本機」模式。</p>
@@ -189,7 +190,7 @@
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 無痕模式存不了就算了 */ } },
   };
-  const K = { key: "jls_key", dict: "jls_dict", auto: "jls_autocopy", hist: "jls_history", model: "jls_model" };
+  const K = { key: "jls_key", dict: "jls_dict", auto: "jls_autocopy", hist: "jls_history", model: "jls_model", plain: "jls_plain" };
 
   const TAP_MS = 300;            // 按不到這麼久＝點一下（進長講）
   const MAX_MS = 10 * 60 * 1000; // 長講最多 10 分鐘
@@ -291,7 +292,7 @@
     try {
       const r = await JLS.processAudio(blob, {
         filename: `speech.${extOf(mime)}`, key: LS.get(K.key, ""), dictText: LS.get(K.dict, JLS.DEFAULT_DICT),
-        model: cachedModel(), onStage: s => status(s),
+        model: cachedModel(), plainPronouns: LS.get(K.plain, "1") === "1", onStage: s => status(s),
       });
       if (r.model) LS.set(K.model, JSON.stringify({ id: r.model, at: Date.now() }));
       setMode("idle");
@@ -432,6 +433,7 @@
     $("keyInput").value = LS.get(K.key, "");
     $("dictInput").value = LS.get(K.dict, JLS.DEFAULT_DICT);
     $("autoCopy").checked = LS.get(K.auto, "1") === "1";
+    $("plainPron").checked = LS.get(K.plain, "1") === "1";
     $("settings").showModal();
     if (firstTime) toast("先貼上 Groq 免費金鑰才能開始用");
   }
@@ -445,6 +447,7 @@
     LS.set(K.key, key);
     LS.set(K.dict, $("dictInput").value);
     LS.set(K.auto, $("autoCopy").checked ? "1" : "0");
+    LS.set(K.plain, $("plainPron").checked ? "1" : "0");
     LS.set(K.model, "null");
     $("settings").close();
     toast(key ? "儲存好了，按住麥克風試試看" : "已儲存");

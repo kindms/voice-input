@@ -21,7 +21,7 @@
     "旌旗教會、桃園旌旗、林口旌旗、小組長、青年牧區、主日信息、講章、4F、決志、受洗、代禱、敬拜、同工",
     "",
     "# 聖經常聽錯的詞",
-    "彌賽亞、以馬內利、哈利路亞、阿們、逾越節、五旬節、住棚節、十字架、道成肉身、聖靈、恩典、救恩、悔改、稱義、成聖、會幕、約櫃、迦南、各各他、耶和華、祢",
+    "彌賽亞、以馬內利、哈利路亞、阿們、逾越節、五旬節、住棚節、十字架、道成肉身、聖靈、恩典、救恩、悔改、稱義、成聖、會幕、約櫃、迦南、各各他、耶和華",
     "",
     "# 聖經書卷",
     "創世記、出埃及記、利未記、民數記、申命記、約書亞記、士師記、路得記、撒母耳記、列王紀、歷代志、以斯拉記、尼希米記、以斯帖記、約伯記、詩篇、箴言、傳道書、雅歌、以賽亞書、耶利米書、耶利米哀歌、以西結書、但以理書、何西阿書、約珥書、阿摩司書、俄巴底亞書、約拿書、彌迦書、那鴻書、哈巴谷書、西番雅書、哈該書、撒迦利亞書、瑪拉基書",
@@ -135,7 +135,10 @@
     return b.map((o, i) => KEEP_AS_IS.has(a[i]) ? a[i] : o).join("");
   }
 
-  function finalize(text, fixes) {
+  // 稱呼神的「祢、祂」寫成一般的「你、他」（設定裡可以關掉；袮 是常見的錯字寫法）
+  const PLAIN_PRONOUNS = { "祢": "你", "袮": "你", "祂": "他" };
+
+  function finalize(text, fixes, plainPronouns = true) {
     let t = normalizeMarks(text);
     t = toTraditional(t);
     // 半形標點只在中文旁邊才轉，英文句子裡的不動
@@ -143,6 +146,7 @@
       (m, a, p, b) => (a || b) ? (a || "") + HALF_TO_FULL[p] + (b || "") : m);
     t = t.replace(/([一-鿿])\.(?=[一-鿿]|$)/g, "$1。");
     for (const [wrong, right] of fixes) t = t.split(wrong).join(right);
+    if (plainPronouns) t = t.replace(/[祢袮祂]/g, c => PLAIN_PRONOUNS[c]);
     t = tidyPunct(t);
     t = t.replace(/[ \t]+\n/g, "\n");
     return t.trim();
@@ -221,7 +225,7 @@
 
   /**
    * @param {Blob} blob 錄音檔
-   * @param {object} opt { filename, key, dictText, model（可省略，會自動挑）, onStage(文字) }
+   * @param {object} opt { filename, key, dictText, model（可省略，會自動挑）, plainPronouns（預設 true）, onStage(文字) }
    * @returns {Promise<{text, raw, route, secs, model}>}
    */
   async function processAudio(blob, opt) {
@@ -246,7 +250,7 @@
       text = "";
     }
     if (!text) { text = cleanupRules(raw); route += "＋規則整理"; }
-    return { text: finalize(text, fixes), raw, route, secs: (Date.now() - t0) / 1000, model };
+    return { text: finalize(text, fixes, opt.plainPronouns ?? true), raw, route, secs: (Date.now() - t0) / 1000, model };
   }
 
   const api = { DEFAULT_DICT, parseDictionary, cleanupRules, finalize, toTraditional, processAudio, pickModel };
